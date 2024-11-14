@@ -11,8 +11,13 @@ extern "C" {
 #include <crypto/ctaes/ctaes.h>
 }
 
-static const int AES_BLOCKSIZE = 16;
-static const int AES256_KEYSIZE = 32;
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+
+constexpr int AES_BLOCKSIZE = 16;
+constexpr int AES256_KEYSIZE = 32;
 
 /** An encryption class for AES-256. */
 class AES256Encrypt
@@ -21,9 +26,9 @@ private:
     AES256_ctx ctx;
 
 public:
-    explicit AES256Encrypt(const unsigned char key[32]);
+    explicit AES256Encrypt(const std::array<uint8_t, AES256_KEYSIZE>& key);
     ~AES256Encrypt();
-    void Encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]) const;
+    void Encrypt(std::array<uint8_t, AES_BLOCKSIZE>& ciphertext, const std::array<uint8_t, AES_BLOCKSIZE>& plaintext) const;
 };
 
 /** A decryption class for AES-256. */
@@ -33,35 +38,37 @@ private:
     AES256_ctx ctx;
 
 public:
-    explicit AES256Decrypt(const unsigned char key[32]);
+    explicit AES256Decrypt(const std::array<uint8_t, AES256_KEYSIZE>& key);
     ~AES256Decrypt();
-    void Decrypt(unsigned char plaintext[16], const unsigned char ciphertext[16]) const;
+    void Decrypt(std::array<uint8_t, AES_BLOCKSIZE>& plaintext, const std::array<uint8_t, AES_BLOCKSIZE>& ciphertext) const;
 };
 
+/** AES-256 CBC encryption with optional padding. */
 class AES256CBCEncrypt
 {
 public:
-    AES256CBCEncrypt(const unsigned char key[AES256_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+    AES256CBCEncrypt(const std::array<uint8_t, AES256_KEYSIZE>& key, const std::array<uint8_t, AES_BLOCKSIZE>& ivIn, bool padIn = true);
     ~AES256CBCEncrypt();
-    int Encrypt(const unsigned char* data, int size, unsigned char* out) const;
+    int Encrypt(const uint8_t* data, size_t size, uint8_t* out) const;
 
 private:
     const AES256Encrypt enc;
     const bool pad;
-    unsigned char iv[AES_BLOCKSIZE];
+    std::array<uint8_t, AES_BLOCKSIZE> iv;
 };
 
+/** AES-256 CBC decryption with optional padding. */
 class AES256CBCDecrypt
 {
 public:
-    AES256CBCDecrypt(const unsigned char key[AES256_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+    AES256CBCDecrypt(const std::array<uint8_t, AES256_KEYSIZE>& key, const std::array<uint8_t, AES_BLOCKSIZE>& ivIn, bool padIn = true);
     ~AES256CBCDecrypt();
-    int Decrypt(const unsigned char* data, int size, unsigned char* out) const;
+    int Decrypt(const uint8_t* data, size_t size, uint8_t* out) const;
 
 private:
     const AES256Decrypt dec;
     const bool pad;
-    unsigned char iv[AES_BLOCKSIZE];
+    std::array<uint8_t, AES_BLOCKSIZE> iv;
 };
 
 #endif // BITCOIN_CRYPTO_AES_H
